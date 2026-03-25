@@ -1,0 +1,25 @@
+# Virtual environment
+.venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Data files (raw data stays local for now)
+data/
+
+# Environment variables and secrets
+.env
+*.env
+
+# Windows system files
+Thumbs.db
+desktop.ini
+
+# IDE files
+.vscode/
+.idea/
