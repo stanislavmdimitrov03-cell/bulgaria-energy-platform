@@ -1,16 +1,14 @@
-\# Bulgaria Energy Intelligence Platform
+ Bulgaria Energy Intelligence Platform
 
 
-
-\## Overview
+Overview
 
 An end-to-end data engineering project that analyses the relationship between
-
 weather conditions and Bulgaria's electricity generation mix and wholesale prices.
 
 
 
-\## Core Question
+Core Question
 
 > How does weather (solar radiation, wind speed) relate to Bulgaria's
 
@@ -18,33 +16,32 @@ weather conditions and Bulgaria's electricity generation mix and wholesale price
 
 
 
-\## Data Sources
+Data Sources
 
-\- \*\*Open-Meteo API\*\* — hourly weather data (solar radiation, wind speed, temperature)
+Open-Meteo API — hourly weather data (solar radiation, wind speed, temperature)
 
-\- \*\*ENTSO-E Transparency Platform\*\* — day-ahead electricity prices and generation by type
-
-
-
-\## Tech Stack
-
-\- \*\*Python\*\* — data ingestion and transformation
-
-\- \*\*Pandas\*\* — data manipulation
-
-\- \*\*DuckDB\*\* — local analytical SQL database
-
-\- \*\*Parquet\*\* — columnar storage format
-
-\- \*\*Streamlit\*\* — interactive dashboard
-
-\- \*\*AWS\*\* (Phase 2) — S3, Athena, Lambda, EventBridge, SNS
+ENTSO-E Transparency Platform — day-ahead electricity prices and generation by type
 
 
 
-\## Project Structure
+ Tech Stack
 
-```
+Python — data ingestion and transformation
+
+Pandas — data manipulation
+
+DuckDB — local analytical SQL database
+
+Parquet — columnar storage format
+
+Streamlit — interactive dashboard
+
+AWS — S3, Athena, Lambda, EventBridge, SNS
+
+
+
+ Project Structure
+
 
 bulgaria-energy-platform/
 
@@ -64,35 +61,4 @@ bulgaria-energy-platform/
 
 └── docs/             # project documentation
 
-```
-
-
-
-\## Status
-
-🚧 In active development — Phase 1 (Local Environment Setup)
-
-```
-
-
-
-Save (\*\*Ctrl+S\*\*) and close Notepad.
-
-
-
-\---
-
-
-
-Now let's make our \*\*first Git commit\*\* — a snapshot of the project at this moment:
-
-```
-
-git add .gitignore README.md
-
-```
-
-```
-
-git commit -m "feat: initial project setup with folder structure, gitignore, and README"
 
