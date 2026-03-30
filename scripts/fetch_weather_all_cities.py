@@ -23,7 +23,7 @@ CITIES = [
 ]
 
 # The base URL for Open-Meteo's historical archive API
-BASE_URL = "https://archive-api.open-meteo.com/v1/archive"
+BASE_URL = "httpnotepad scripts\setup_duckdb.pys://archive-api.open-meteo.com/v1/archive"
 
 # -----------------------------------------------------------------------------
 # STEP 2: Define a reusable function
