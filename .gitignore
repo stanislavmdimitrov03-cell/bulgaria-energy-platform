@@ -23,3 +23,6 @@ desktop.ini
 # IDE files
 .vscode/
 .idea/
+
+# DuckDB temp files
+tmp/
