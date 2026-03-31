@@ -8,6 +8,9 @@ import duckdb
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+from pyathena import connect as athena_connect
+from pyathena.pandas.cursor import PandasCursor
+
 
 # -----------------------------------------------------------------------------
 # PAGE CONFIGURATION
@@ -24,8 +27,11 @@ st.set_page_config(
 # We connect to DuckDB once and reuse the connection across all pages
 # -----------------------------------------------------------------------------
 
-@st.cache_resource  # cache the connection so it doesn't reconnect on every rerun
-def get_connection():
+USE_CLOUD = False  # set to True to use Athena, False to use local DuckDB
+
+@st.cache_resource
+def get_local_connection():
+    """Connect to local DuckDB database."""
     db_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'bulgaria_energy.db')
     )
@@ -33,7 +39,27 @@ def get_connection():
     con.execute("SET temp_directory='C:/Users/stann/Projects/bulgaria-energy-platform/tmp'")
     return con
 
-con = get_connection()
+@st.cache_resource
+def get_cloud_connection():
+    """Connect to Athena (cloud data lake)."""
+    return athena_connect(
+        s3_staging_dir="s3://bulgaria-energy-platform-sd-2024/athena-results/",
+        region_name="eu-central-1",
+        cursor_class=PandasCursor
+    )
+
+def run_query(sql):
+    """
+    Run a SQL query against either local DuckDB or cloud Athena.
+    Returns a pandas DataFrame either way.
+    """
+    if USE_CLOUD:
+        con = get_cloud_connection()
+        cursor = con.cursor()
+        return cursor.execute(sql).as_pandas()
+    else:
+        con = get_local_connection()
+        return con.execute(sql).df()
 
 # -----------------------------------------------------------------------------
 # SIDEBAR NAVIGATION
@@ -61,14 +87,14 @@ if page == "Energy Mix Overview":
     col1, col2, col3, col4 = st.columns(4)
 
     # Pull summary stats from DuckDB
-    stats = con.execute("""
+    stats = run_query("""
         SELECT
             ROUND(AVG(renewable_pct), 1)      AS avg_renewable_pct,
             ROUND(AVG(nuclear_mw), 0)          AS avg_nuclear_mw,
             ROUND(AVG(total_generation_mw), 0) AS avg_total_mw,
             ROUND(AVG(solar_mw), 0)            AS avg_solar_mw
         FROM fct_generation_hourly
-    """).df()
+    """)
 
     # st.metric() creates a KPI card with a label and value
     col1.metric("Avg Renewable Share", f"{stats['avg_renewable_pct'][0]}%")
@@ -81,7 +107,7 @@ if page == "Energy Mix Overview":
     # --- Monthly Energy Mix Chart ---
     st.subheader("Monthly Generation by Source")
 
-    monthly_mix = con.execute("""
+    monthly_mix = run_query("""
         SELECT
             d.month,
             d.month_name,
@@ -97,7 +123,7 @@ if page == "Energy Mix Overview":
         JOIN dim_date d ON g.date_key = d.date_key
         GROUP BY d.month, d.month_name
         ORDER BY d.month
-    """).df()
+    """)
 
     fig, ax = plt.subplots(figsize=(14, 6))
     ax.stackplot(
@@ -159,14 +185,14 @@ elif page == "Price Analysis":
     # --- KPI Cards ---
     col1, col2, col3, col4 = st.columns(4)
 
-    price_stats = con.execute("""
+    price_stats = run_query("""
         SELECT
             ROUND(AVG(price_eur_mwh), 2)  AS avg_price,
             ROUND(MIN(price_eur_mwh), 2)  AS min_price,
             ROUND(MAX(price_eur_mwh), 2)  AS max_price,
             COUNT(CASE WHEN is_negative_price THEN 1 END) AS negative_hours
         FROM fct_prices_hourly
-    """).df()
+    """)
 
     col1.metric("Average Price", f"{price_stats['avg_price'][0]} EUR/MWh")
     col2.metric("Minimum Price", f"{price_stats['min_price'][0]} EUR/MWh")
@@ -178,7 +204,7 @@ elif page == "Price Analysis":
     # --- Price over time ---
     st.subheader("Monthly Average Price")
 
-    monthly_prices = con.execute("""
+    monthly_prices = run_query("""
         SELECT
             d.month,
             d.month_name,
@@ -189,7 +215,7 @@ elif page == "Price Analysis":
         JOIN dim_date d ON p.date_key = d.date_key
         GROUP BY d.month, d.month_name
         ORDER BY d.month
-    """).df()
+    """)
 
     fig, ax = plt.subplots(figsize=(14, 5))
     ax.fill_between(
@@ -216,7 +242,7 @@ elif page == "Price Analysis":
     # --- Price by hour heatmap ---
     st.subheader("Price Heatmap by Hour and Season")
 
-    heatmap_data = con.execute("""
+    heatmap_data = run_query("""
         SELECT
             d.season,
             d.hour,
@@ -225,7 +251,7 @@ elif page == "Price Analysis":
         JOIN dim_date d ON p.date_key = d.date_key
         GROUP BY d.season, d.hour
         ORDER BY d.hour
-    """).df()
+    """)
 
     heatmap_pivot = heatmap_data.pivot(
         index='season', columns='hour', values='avg_price'
@@ -250,13 +276,13 @@ elif page == "Price Analysis":
     # --- Price vs renewable scatter ---
     st.subheader("Price vs Renewable Share")
 
-    scatter_data = con.execute("""
+    scatter_data = run_query("""
         SELECT
             g.renewable_pct,
             p.price_eur_mwh
         FROM fct_generation_hourly g
         JOIN fct_prices_hourly p ON g.date_key = p.date_key
-    """).df()
+    """)
 
     fig3, ax3 = plt.subplots(figsize=(10, 5))
     ax3.scatter(
@@ -291,11 +317,11 @@ elif page == "Weather and Renewables":
                         ["Sofia", "Plovdiv", "Varna", "Burgas", "Pleven"])
 
     # Get the city_key for the selected city
-    city_key = con.execute(f"""
+    city_key = get_local_connection().execute(f"""
         SELECT city_key FROM dim_city WHERE city = '{city}'
     """).fetchone()[0]
 
-    solar_data = con.execute(f"""
+    solar_data = run_query(f"""
         SELECT
             w.shortwave_radiation_wm2,
             g.solar_mw,
@@ -305,7 +331,7 @@ elif page == "Weather and Renewables":
         JOIN dim_date d              ON w.date_key = d.date_key
         WHERE w.city_key = {city_key}
         AND w.shortwave_radiation_wm2 > 0
-    """).df()
+    """)
 
     fig, ax = plt.subplots(figsize=(12, 5))
     scatter = ax.scatter(
@@ -329,7 +355,7 @@ elif page == "Weather and Renewables":
     # --- Monthly solar radiation by city ---
     st.subheader("Monthly Solar Radiation Across Cities")
 
-    city_solar = con.execute("""
+    city_solar = run_query("""
         SELECT
             c.city,
             d.month,
@@ -340,7 +366,7 @@ elif page == "Weather and Renewables":
         JOIN dim_date d ON w.date_key = d.date_key
         GROUP BY c.city, d.month, d.month_name
         ORDER BY c.city, d.month
-    """).df()
+    """)
 
     fig2, ax2 = plt.subplots(figsize=(14, 5))
     colors_city = {
@@ -370,7 +396,7 @@ elif page == "Weather and Renewables":
     # --- Wind speed vs wind generation ---
     st.subheader("Wind Speed vs Wind Generation")
 
-    wind_data = con.execute(f"""
+    wind_data = run_query(f"""
         SELECT
             w.windspeed_10m_kmh,
             g.wind_onshore_mw,
@@ -379,7 +405,7 @@ elif page == "Weather and Renewables":
         JOIN fct_generation_hourly g ON w.date_key = g.date_key
         JOIN dim_date d              ON w.date_key = d.date_key
         WHERE w.city_key = {city_key}
-    """).df()
+    """)
 
     fig3, ax3 = plt.subplots(figsize=(12, 5))
     colors_season = {
@@ -419,14 +445,14 @@ elif page == "Key Insights":
 
     with col1:
         st.markdown("**Generation**")
-        gen_stats = con.execute("""
+        gen_stats = run_query("""
             SELECT
                 ROUND(AVG(total_generation_mw), 0) AS avg_total,
                 ROUND(AVG(renewable_pct), 1)        AS avg_renewable,
                 ROUND(AVG(nuclear_mw), 0)           AS avg_nuclear,
                 ROUND(AVG(solar_mw), 0)             AS avg_solar
             FROM fct_generation_hourly
-        """).df()
+        """)
         st.metric("Avg Total Generation", f"{int(gen_stats['avg_total'][0])} MW")
         st.metric("Avg Renewable Share", f"{gen_stats['avg_renewable'][0]}%")
         st.metric("Avg Nuclear Output", f"{int(gen_stats['avg_nuclear'][0])} MW")
@@ -434,7 +460,7 @@ elif page == "Key Insights":
 
     with col2:
         st.markdown("**Prices**")
-        price_stats = con.execute("""
+        price_stats = run_query("""
             SELECT
                 ROUND(AVG(price_eur_mwh), 2)  AS avg_price,
                 ROUND(MIN(price_eur_mwh), 2)  AS min_price,
@@ -442,7 +468,7 @@ elif page == "Key Insights":
                 COUNT(CASE WHEN is_negative_price 
                       THEN 1 END)             AS negative_hours
             FROM fct_prices_hourly
-        """).df()
+        """)
         st.metric("Average Price", f"{price_stats['avg_price'][0]} EUR/MWh")
         st.metric("Minimum Price", f"{price_stats['min_price'][0]} EUR/MWh")
         st.metric("Maximum Price", f"{price_stats['max_price'][0]} EUR/MWh")
@@ -450,14 +476,14 @@ elif page == "Key Insights":
 
     with col3:
         st.markdown("**Weather**")
-        weather_stats = con.execute("""
+        weather_stats = run_query("""
        SELECT ROUND(AVG(shortwave_radiation_wm2), 1) AS avg_radiation,
            ROUND(MAX(shortwave_radiation_wm2), 1) AS max_radiation,
         ROUND(AVG(temperature_2m_c), 1)        AS avg_temp,
            ROUND(AVG(windspeed_10m_kmh), 1)       AS avg_wind
              FROM fct_weather_hourly
                     WHERE city_key = 4
-                       """).df()
+                       """)
         st.metric("Avg Solar Radiation",
                   f"{weather_stats['avg_radiation'][0]} W/m2")
         st.metric("Peak Solar Radiation",
@@ -518,7 +544,7 @@ elif page == "Key Insights":
     # --- Seasonal summary table ---
     st.subheader("Seasonal Summary")
 
-    seasonal = con.execute("""
+    seasonal = run_query("""
         SELECT
             d.season                              AS Season,
             ROUND(AVG(g.renewable_pct), 1)        AS "Renewable %",
@@ -532,7 +558,7 @@ elif page == "Key Insights":
         JOIN dim_date d          ON g.date_key = d.date_key
         GROUP BY d.season
         ORDER BY "Renewable %" DESC
-    """).df()
+    """)
 
     st.dataframe(seasonal, use_container_width=True)
 
