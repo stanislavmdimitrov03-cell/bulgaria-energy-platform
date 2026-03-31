@@ -27,7 +27,7 @@ st.set_page_config(
 # We connect to DuckDB once and reuse the connection across all pages
 # -----------------------------------------------------------------------------
 
-USE_CLOUD = False  # set to True to use Athena, False to use local DuckDB
+USE_CLOUD = True  # set to True to use Athena, False to use local DuckDB
 
 @st.cache_resource
 def get_local_connection():
@@ -45,6 +45,7 @@ def get_cloud_connection():
     return athena_connect(
         s3_staging_dir="s3://bulgaria-energy-platform-sd-2024/athena-results/",
         region_name="eu-central-1",
+        schema_name="bulgaria_energy",
         cursor_class=PandasCursor
     )
 
