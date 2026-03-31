@@ -75,6 +75,39 @@ print(result)
 # STEP 5: Close the connection cleanly
 # Always close your database connection when you're done
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Load ENTSO-E prices into DuckDB
+# -----------------------------------------------------------------------------
+
+print("Loading electricity prices data...")
+
+prices_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
+              '..', 'data', 'raw', 'entsoe_prices_bulgaria_2024.parquet'))
+
+con.execute(f"""
+    CREATE OR REPLACE TABLE raw_prices AS
+    SELECT * FROM read_parquet('{prices_path}')
+""")
+
+row_count = con.execute("SELECT COUNT(*) FROM raw_prices").fetchone()[0]
+print(f"  ✓ raw_prices table created: {row_count} rows")
+
+# -----------------------------------------------------------------------------
+# Load ENTSO-E generation into DuckDB
+# -----------------------------------------------------------------------------
+
+print("Loading electricity generation data...")
+
+gen_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
+           '..', 'data', 'raw', 'entsoe_generation_bulgaria_2024.parquet'))
+
+con.execute(f"""
+    CREATE OR REPLACE TABLE raw_generation AS
+    SELECT * FROM read_parquet('{gen_path}')
+""")
+
+row_count = con.execute("SELECT COUNT(*) FROM raw_generation").fetchone()[0]
+print(f"  ✓ raw_generation table created: {row_count} rows")
 
 con.close()
 print(f"\nDatabase saved to: {db_path}")
