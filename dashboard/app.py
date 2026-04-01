@@ -14,10 +14,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# -----------------------------------------------------------------------------
+
 # DATABASE CONNECTION
-# We connect to DuckDB once and reuse the connection across all pages
-# -----------------------------------------------------------------------------
+
 
 USE_CLOUD = True  # set to True to use Athena, False to use local DuckDB
 
@@ -42,10 +41,7 @@ def get_cloud_connection():
     )
 
 def run_query(sql):
-    """
-    Run a SQL query against either local DuckDB or cloud Athena.
-    Returns a pandas DataFrame either way.
-    """
+
     if USE_CLOUD:
         con = get_cloud_connection()
         cursor = con.cursor()
@@ -54,11 +50,8 @@ def run_query(sql):
         con = get_local_connection()
         return con.execute(sql).df()
 
-# -----------------------------------------------------------------------------
 # SIDEBAR NAVIGATION
-# st.sidebar puts content in the left panel
-# st.radio creates a set of clickable options
-# -----------------------------------------------------------------------------
+
 
 st.sidebar.title("Navigation")
 page = st.sidebar.radio(
@@ -66,17 +59,16 @@ page = st.sidebar.radio(
     ["Energy Mix Overview", "Price Analysis", "Weather and Renewables", "Key Insights"]
 )
 
-# -----------------------------------------------------------------------------
 # PAGE 1: ENERGY MIX OVERVIEW
-# -----------------------------------------------------------------------------
+
 
 if page == "Energy Mix Overview":
 
     st.title("Bulgaria Energy Mix 2024")
     st.markdown("How Bulgaria generated its electricity throughout 2024.")
 
-    # --- KPI Cards ---
-    # st.columns() divides the page into equal columns
+    # KPI Cards
+
     col1, col2, col3, col4 = st.columns(4)
 
     # Pull summary stats from DuckDB
@@ -89,15 +81,15 @@ if page == "Energy Mix Overview":
         FROM fct_generation_hourly
     """)
 
-    # st.metric() creates a KPI card with a label and value
+
     col1.metric("Avg Renewable Share", f"{stats['avg_renewable_pct'][0]}%")
     col2.metric("Avg Nuclear Output", f"{int(stats['avg_nuclear_mw'][0])} MW")
     col3.metric("Avg Total Generation", f"{int(stats['avg_total_mw'][0])} MW")
     col4.metric("Avg Solar Output", f"{int(stats['avg_solar_mw'][0])} MW")
 
-    st.divider()  # horizontal line
+    st.divider()
 
-    # --- Monthly Energy Mix Chart ---
+    # Monthly Energy Mix Chart
     st.subheader("Monthly Generation by Source")
 
     monthly_mix = run_query("""
@@ -136,12 +128,11 @@ if page == "Energy Mix Overview":
     plt.xticks(rotation=45)
     plt.tight_layout()
 
-    # st.pyplot() renders a matplotlib chart in Streamlit
     st.pyplot(fig)
 
     st.divider()
 
-    # --- Renewable Share Line Chart ---
+   # Renewable Share Line Chart
     st.subheader("Monthly Renewable Share")
 
     fig2, ax2 = plt.subplots(figsize=(14, 4))
@@ -162,20 +153,19 @@ if page == "Energy Mix Overview":
     plt.tight_layout()
     st.pyplot(fig2)
 
-    # --- Raw data toggle ---
+    # Raw data toggle
     if st.checkbox("Show raw data"):
         st.dataframe(monthly_mix)
 
-# -----------------------------------------------------------------------------
-# PLACEHOLDER PAGES (we'll build these next)
-# -----------------------------------------------------------------------------
+
+# PLACEHOLDER PAGES
 
 elif page == "Price Analysis":
 
     st.title("Electricity Price Analysis 2024")
     st.markdown("Day-ahead wholesale electricity prices for Bulgaria.")
 
-    # --- KPI Cards ---
+    #  KPI Cards
     col1, col2, col3, col4 = st.columns(4)
 
     price_stats = run_query("""
@@ -194,7 +184,7 @@ elif page == "Price Analysis":
 
     st.divider()
 
-    # --- Price over time ---
+    # Price over time
     st.subheader("Monthly Average Price")
 
     monthly_prices = run_query("""
@@ -232,7 +222,7 @@ elif page == "Price Analysis":
 
     st.divider()
 
-    # --- Price by hour heatmap ---
+    # Price by hour heatmap
     st.subheader("Price Heatmap by Hour and Season")
 
     heatmap_data = run_query("""
@@ -266,7 +256,7 @@ elif page == "Price Analysis":
 
     st.divider()
 
-    # --- Price vs renewable scatter ---
+    # Price vs renewable scatter
     st.subheader("Price vs Renewable Share")
 
     scatter_data = run_query("""
@@ -302,7 +292,7 @@ elif page == "Weather and Renewables":
 
     st.divider()
 
-    # --- Solar radiation vs solar generation ---
+    # Solar radiation vs solar generation
     st.subheader("Solar Radiation vs Solar Generation")
 
     # City selector — user can pick which city's weather to display
@@ -345,7 +335,7 @@ elif page == "Weather and Renewables":
 
     st.divider()
 
-    # --- Monthly solar radiation by city ---
+    # Monthly solar radiation by city
     st.subheader("Monthly Solar Radiation Across Cities")
 
     city_solar = run_query("""
@@ -386,7 +376,7 @@ elif page == "Weather and Renewables":
 
     st.divider()
 
-    # --- Wind speed vs wind generation ---
+    # Wind speed vs wind generation
     st.subheader("Wind Speed vs Wind Generation")
 
     wind_data = run_query(f"""
@@ -431,7 +421,7 @@ elif page == "Key Insights":
 
     st.divider()
 
-    # --- Summary statistics ---
+    #Summary statistics
     st.subheader("2024 at a Glance")
 
     col1, col2, col3 = st.columns(3)
@@ -488,7 +478,7 @@ elif page == "Key Insights":
 
     st.divider()
 
-    # --- Key findings ---
+    # Key findings
     st.subheader("Key Findings")
 
     findings = [
@@ -534,7 +524,7 @@ elif page == "Key Insights":
 
     st.divider()
 
-    # --- Seasonal summary table ---
+    # Seasonal summary table
     st.subheader("Seasonal Summary")
 
     seasonal = run_query("""
