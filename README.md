@@ -93,6 +93,8 @@ streamlit run dashboard/app.py
 
 ## Dashboard
 
+**Live dashboard:** [View here] https://bulgaria-energy-platform-n2m9mspyod6ucngbagztdy.streamlit.app/
+
 Four pages:
 - Energy mix overview — how Bulgaria generated electricity month by month
 - Price analysis — when prices are high, low, and why
