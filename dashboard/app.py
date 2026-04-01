@@ -32,8 +32,10 @@ def get_local_connection():
 
 @st.cache_resource
 def get_cloud_connection():
-    """Connect to Athena (cloud data lake)."""
+    """Connect to Athena using Streamlit secrets for credentials."""
     return athena_connect(
+        aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
         s3_staging_dir="s3://bulgaria-energy-platform-sd-2024/athena-results/",
         region_name="eu-central-1",
         schema_name="bulgaria_energy",

@@ -1,0 +1,11 @@
+
+requests
+pandas
+duckdb
+matplotlib
+pyarrow
+entsoe-py
+python-dotenv
+streamlit
+pyathena
+boto3
