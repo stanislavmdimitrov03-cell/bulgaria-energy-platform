@@ -1,8 +1,4 @@
-# =============================================================================
-# export_to_s3.py
-# Exports DuckDB star schema tables to S3 as Parquet files
-# so Athena can query them directly
-# =============================================================================
+
 
 import duckdb
 import os
@@ -18,7 +14,7 @@ con.execute("SET temp_directory='C:/Users/stann/Projects/bulgaria-energy-platfor
 s3 = boto3.client('s3')
 BUCKET = 'bulgaria-energy-platform-sd-2024'
 
-# Create local curated folder using absolute path
+
 curated_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'curated'))
 os.makedirs(curated_dir, exist_ok=True)
 
@@ -34,10 +30,8 @@ tables = [
 for table in tables:
     print(f"Exporting {table}...")
 
-    # Read table from DuckDB into pandas
     df = con.execute(f"SELECT * FROM {table}").df()
-
-    # Save locally as parquet using absolute path
+#Parquet
     local_path = os.path.join(curated_dir, f"{table}.parquet")
     df.to_parquet(local_path, index=False)
 

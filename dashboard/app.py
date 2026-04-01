@@ -1,7 +1,3 @@
-# =============================================================================
-# app.py — Bulgaria Energy Intelligence Platform
-# Main Streamlit dashboard file
-# =============================================================================
 
 import streamlit as st
 import duckdb
@@ -12,10 +8,6 @@ from pyathena import connect as athena_connect
 from pyathena.pandas.cursor import PandasCursor
 
 
-# -----------------------------------------------------------------------------
-# PAGE CONFIGURATION
-# Must be the first Streamlit command in the file
-# -----------------------------------------------------------------------------
 
 st.set_page_config(
     page_title="Bulgaria Energy Intelligence",

@@ -1,29 +1,18 @@
-# =============================================================================
-# setup_duckdb.py
-# Creates a DuckDB database and loads our raw Parquet files into tables
-# Think of this as "setting up our local data warehouse"
-# =============================================================================
 
-import duckdb  # the database library
-import os      # for file path operations
 
-# -----------------------------------------------------------------------------
+import duckdb
+import os
+
 # STEP 1: Create (or connect to) the DuckDB database file
-# If the file doesn't exist, DuckDB creates it automatically
-# If it already exists, DuckDB just opens it
-# -----------------------------------------------------------------------------
 
-# This creates a file called "bulgaria_energy.db" in your project root
+
+# creates a file called "bulgaria_energy.db" project root
 db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'bulgaria_energy.db')
-con = duckdb.connect(db_path)  # con = connection, our gateway to the database
-
+con = duckdb.connect(db_path)
 print(f"Connected to DuckDB database: {db_path}")
 
-# -----------------------------------------------------------------------------
 # STEP 2: Load the weather data into a DuckDB table
-# DuckDB can read Parquet files directly with read_parquet()
-# We wrap it in CREATE OR REPLACE TABLE to make it a permanent table
-# -----------------------------------------------------------------------------
+
 
 print("Loading weather data...")
 
@@ -37,25 +26,20 @@ con.execute(f"""
 
 # Verify it loaded correctly by counting rows
 row_count = con.execute("SELECT COUNT(*) FROM raw_weather").fetchone()[0]
-print(f"  ✓ raw_weather table created: {row_count} rows")
+print(f"   raw_weather table created: {row_count} rows")
 
-# -----------------------------------------------------------------------------
 # STEP 3: Preview the data with SQL
-# -----------------------------------------------------------------------------
+
 
 print("\nFirst 5 rows of raw_weather:")
 result = con.execute("""
     SELECT *
     FROM raw_weather
     LIMIT 5
-""").df()  # .df() converts the result into a pandas DataFrame for display
+""").df()
 
 print(result)
-
-# -----------------------------------------------------------------------------
 # STEP 4: Run a quick analytical query to verify everything works
-# This query shows us the average solar radiation per city
-# -----------------------------------------------------------------------------
 
 print("\nAverage solar radiation by city:")
 result = con.execute("""
@@ -71,13 +55,8 @@ result = con.execute("""
 
 print(result)
 
-# -----------------------------------------------------------------------------
 # STEP 5: Close the connection cleanly
-# Always close your database connection when you're done
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# Load ENTSO-E prices into DuckDB
-# -----------------------------------------------------------------------------
+
 
 print("Loading electricity prices data...")
 
@@ -90,11 +69,10 @@ con.execute(f"""
 """)
 
 row_count = con.execute("SELECT COUNT(*) FROM raw_prices").fetchone()[0]
-print(f"  ✓ raw_prices table created: {row_count} rows")
+print(f"   raw_prices table created: {row_count} rows")
 
-# -----------------------------------------------------------------------------
 # Load ENTSO-E generation into DuckDB
-# -----------------------------------------------------------------------------
+
 
 print("Loading electricity generation data...")
 
@@ -107,7 +85,7 @@ con.execute(f"""
 """)
 
 row_count = con.execute("SELECT COUNT(*) FROM raw_generation").fetchone()[0]
-print(f"  ✓ raw_generation table created: {row_count} rows")
+print(f"   raw_generation table created: {row_count} rows")
 
 con.close()
 print(f"\nDatabase saved to: {db_path}")

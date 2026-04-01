@@ -1,8 +1,4 @@
-# =============================================================================
-# create_cleaned_tables.py
-# Creates cleaned versions of our raw tables in DuckDB
-# Adds derived columns, standardizes types, handles nulls
-# =============================================================================
+
 
 import duckdb
 
@@ -12,10 +8,10 @@ db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'bulgar
 con = duckdb.connect(db_path)
 print("Connected to DuckDB database")
 
-# -----------------------------------------------------------------------------
+
 # STEP 1: Create cleaned weather table
 # We add derived time columns that will be very useful for analysis
-# -----------------------------------------------------------------------------
+
 
 print("Creating cleaned weather table...")
 
@@ -72,11 +68,11 @@ con.execute("""
 
 # Verify the cleaned table
 row_count = con.execute("SELECT COUNT(*) FROM cleaned_weather").fetchone()[0]
-print(f"  ✓ cleaned_weather table created: {row_count} rows")
+print(f"   cleaned_weather table created: {row_count} rows")
 
-# -----------------------------------------------------------------------------
+
 # STEP 2: Preview the cleaned table
-# -----------------------------------------------------------------------------
+
 
 print("\nSample of cleaned_weather table:")
 result = con.execute("""
@@ -89,10 +85,10 @@ result = con.execute("""
 """).df()
 print(result)
 
-# -----------------------------------------------------------------------------
+
 # STEP 3: Run a meaningful analytical query on the cleaned data
 # Average solar radiation by season and city
-# -----------------------------------------------------------------------------
+
 
 print("\nAverage solar radiation by season:")
 result = con.execute("""
@@ -105,9 +101,9 @@ result = con.execute("""
     ORDER BY avg_radiation DESC
 """).df()
 print(result)
-# -----------------------------------------------------------------------------
+
 # STEP 3: Create cleaned prices table
-# -----------------------------------------------------------------------------
+
 
 print("Creating cleaned prices table...")
 
@@ -153,11 +149,11 @@ con.execute("""
 """)
 
 count = con.execute("SELECT COUNT(*) FROM cleaned_prices").fetchone()[0]
-print(f"  ✓ cleaned_prices created: {count} rows")
+print(f"   cleaned_prices created: {count} rows")
 
-# -----------------------------------------------------------------------------
+
 # STEP 4: Create cleaned generation table
-# -----------------------------------------------------------------------------
+
 
 print("Creating cleaned generation table...")
 
@@ -167,7 +163,7 @@ con.execute("""
         timestamp,
         country,
 
-        -- Rename columns to clean snake_case names
+        
         "Nuclear"                          AS nuclear_mw,
         "Fossil Brown coal/Lignite"        AS lignite_mw,
         "Solar"                            AS solar_mw,
@@ -180,14 +176,14 @@ con.execute("""
         "Waste"                            AS waste_mw,
         "Hydro Pumped Storage"             AS hydro_pumped_mw,
 
-        -- Derived time columns
+        
         YEAR(timestamp)      AS year,
         MONTH(timestamp)     AS month,
         DAY(timestamp)       AS day,
         HOUR(timestamp)      AS hour,
         DAYOFWEEK(timestamp) AS day_of_week,
 
-        -- Season
+        
         CASE
             WHEN MONTH(timestamp) IN (12, 1, 2)  THEN 'Winter'
             WHEN MONTH(timestamp) IN (3, 4, 5)   THEN 'Spring'
@@ -224,7 +220,7 @@ con.execute("""
 """)
 
 count = con.execute("SELECT COUNT(*) FROM cleaned_generation").fetchone()[0]
-print(f"  ✓ cleaned_generation created: {count} rows")
+print(f"   cleaned_generation created: {count} rows")
 
 # Quick check — average renewable share
 result = con.execute("""

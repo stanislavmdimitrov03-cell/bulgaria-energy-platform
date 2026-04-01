@@ -1,8 +1,4 @@
-# =============================================================================
-# create_star_schema.py
-# Builds a star schema data model in DuckDB from our cleaned tables
-# Creates dimension tables and fact tables
-# =============================================================================
+
 
 import duckdb
 import os
@@ -14,18 +10,16 @@ con.execute("SET temp_directory = 'C:/Users/stann/Projects/bulgaria-energy-platf
 
 print("Connected to DuckDB database")
 
-# -----------------------------------------------------------------------------
+
 # STEP 1: Create dim_date
-# A date dimension table with one row per unique hour in our dataset
-# This lets us easily filter/group by any time component in analysis
-# -----------------------------------------------------------------------------
+
 
 print("Creating dim_date...")
 
 con.execute("""
     CREATE OR REPLACE TABLE dim_date AS
     SELECT DISTINCT
-        -- Unique key for this dimension (format: YYYYMMDDHH)
+        
         CAST(STRFTIME(timestamp, '%Y%m%d%H') AS INTEGER) AS date_key,
 
         timestamp,
@@ -36,19 +30,19 @@ con.execute("""
         DAYOFWEEK(timestamp)                              AS day_of_week,
         DAYOFYEAR(timestamp)                              AS day_of_year,
 
-        -- Human readable month name
+        
         STRFTIME(timestamp, '%B')                         AS month_name,
 
-        -- Human readable day name
+       
         STRFTIME(timestamp, '%A')                         AS day_name,
 
-        -- Is this a weekend?
+        
         CASE
             WHEN DAYOFWEEK(timestamp) IN (0, 6) THEN TRUE
             ELSE FALSE
         END AS is_weekend,
 
-        -- Season
+        
         CASE
             WHEN MONTH(timestamp) IN (12, 1, 2)  THEN 'Winter'
             WHEN MONTH(timestamp) IN (3, 4, 5)   THEN 'Spring'
@@ -56,7 +50,7 @@ con.execute("""
             WHEN MONTH(timestamp) IN (9, 10, 11) THEN 'Autumn'
         END AS season,
 
-        -- Is daytime? (between 6am and 9pm as a general rule)
+        
         CASE
             WHEN HOUR(timestamp) BETWEEN 6 AND 21 THEN TRUE
             ELSE FALSE
@@ -69,10 +63,9 @@ con.execute("""
 count = con.execute("SELECT COUNT(*) FROM dim_date").fetchone()[0]
 print(f"   dim_date created: {count} rows")
 
-# -----------------------------------------------------------------------------
+
 # STEP 2: Create dim_city
-# One row per city with geographic metadata
-# -----------------------------------------------------------------------------
+
 
 print("Creating dim_city...")
 
@@ -107,15 +100,12 @@ count = con.execute("SELECT COUNT(*) FROM dim_city").fetchone()[0]
 print(f"   dim_city created: {count} rows")
 print(con.execute("SELECT * FROM dim_city").df())
 
-# Preview dim_city — it's small enough to show fully
+
 print("\ndim_city contents:")
 print(con.execute("SELECT * FROM dim_city").df())
 
-# -----------------------------------------------------------------------------
 # STEP 3: Create fct_weather_hourly
-# The main fact table — one row per city per hour
-# References dim_date and dim_city by their keys
-# -----------------------------------------------------------------------------
+
 
 print("\nCreating fct_weather_hourly...")
 
@@ -145,11 +135,9 @@ con.execute("""
 count = con.execute("SELECT COUNT(*) FROM fct_weather_hourly").fetchone()[0]
 print(f"   fct_weather_hourly created: {count} rows")
 
-# -----------------------------------------------------------------------------
+
 # STEP 4: Test the star schema with an analytical query
-# This query joins all three tables together
-# Notice how clean and readable this is compared to working with raw data
-# -----------------------------------------------------------------------------
+
 
 print("\nTest query — average summer solar radiation by city and region:")
 result = con.execute("""
@@ -168,10 +156,9 @@ result = con.execute("""
 """).df()
 
 print(result)
-# -----------------------------------------------------------------------------
+
 # STEP 4: Create fct_prices_hourly
-# One row per hour — electricity price for Bulgaria
-# -----------------------------------------------------------------------------
+
 
 print("Creating fct_prices_hourly...")
 
@@ -195,10 +182,9 @@ con.execute("""
 count = con.execute("SELECT COUNT(*) FROM fct_prices_hourly").fetchone()[0]
 print(f"   fct_prices_hourly created: {count} rows")
 
-# -----------------------------------------------------------------------------
+
 # STEP 5: Create fct_generation_hourly
-# One row per hour — generation by source for Bulgaria
-# -----------------------------------------------------------------------------
+
 
 print("Creating fct_generation_hourly...")
 
@@ -240,10 +226,9 @@ con.execute("""
 count = con.execute("SELECT COUNT(*) FROM fct_generation_hourly").fetchone()[0]
 print(f"   fct_generation_hourly created: {count} rows")
 
-# -----------------------------------------------------------------------------
-# STEP 6: The money query — join all tables together
-# This answers our core question directly
-# -----------------------------------------------------------------------------
+
+# STEP 6: The query — join all tables together
+
 
 print("\nCore analytical query — weather vs prices vs generation:")
 result = con.execute("""
