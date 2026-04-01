@@ -28,9 +28,7 @@ data warehouses are built — which was part of the point.
 
 ### Why Streamlit instead of Power BI or Tableau?
 I already know Power BI and Tableau. Building in Streamlit meant 
-learning something new and showing Python skills rather than BI tool 
-skills. For a data engineering portfolio project, the code matters 
-more than the visual polish.
+learning something new.
 
 ### Why Lambda + EventBridge instead of a scheduled script on a server?
 No server to maintain or pay for when idle. The pipeline runs for 
