@@ -27,7 +27,7 @@ def get_local_connection():
         os.path.join(os.path.dirname(__file__), '..', 'bulgaria_energy.db')
     )
     con = duckdb.connect(db_path, read_only=True)
-    con.execute("SET temp_directory='C:/Users/stann/Projects/bulgaria-energy-platform/tmp'")
+
     return con
 
 @st.cache_resource
@@ -301,10 +301,8 @@ elif page == "Weather and Renewables":
     city = st.selectbox("Select city for weather data:",
                         ["Sofia", "Plovdiv", "Varna", "Burgas", "Pleven"])
 
-    # Get the city_key for the selected city
-    city_key = get_local_connection().execute(f"""
-        SELECT city_key FROM dim_city WHERE city = '{city}'
-    """).fetchone()[0]
+    city_key_df = run_query(f"SELECT city_key FROM dim_city WHERE city = '{city}'")
+    city_key = city_key_df['city_key'][0]
 
     solar_data = run_query(f"""
         SELECT
